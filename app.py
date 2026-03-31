@@ -8,6 +8,10 @@ import streamlit as st
 import pandas as pd
 
 from db import load_csv_to_duckdb, get_schema, run_query, sanitize_table_name, get_table_stats
+from analysis import (
+    get_statistical_summary, get_data_quality_report,
+    get_correlation_matrix, get_distribution_plots, detect_trends
+)
 from llm import generate_sql, explain_results
 from utils import (
     detect_chart_type, build_chart, df_preview, is_valid_dataframe,
@@ -161,6 +165,63 @@ with st.expander("📋 Dataset Overview", expanded=True):
     st.code(", ".join(df.columns.tolist()), language=None)
     st.markdown("**Sample rows:**")
     st.dataframe(df_preview(df, 5), use_container_width=True)
+
+# ---------------------------------------------------------------------------
+# Data Science Analysis Section
+# ---------------------------------------------------------------------------
+st.markdown("---")
+st.markdown("### 🔬 Data Science Analysis")
+
+ds_tab1, ds_tab2, ds_tab3, ds_tab4 = st.tabs([
+    "📊 Statistics", "🧹 Data Quality", "🔗 Correlations", "📈 Distributions"
+])
+
+with ds_tab1:
+    st.markdown("**Statistical Summary**")
+    summary_df = get_statistical_summary(df)
+    if not summary_df.empty:
+        st.dataframe(summary_df, use_container_width=True)
+        trends = detect_trends(df)
+        if trends:
+            st.markdown("**Trend Detection**")
+            st.dataframe(pd.DataFrame(trends), use_container_width=True)
+        else:
+            st.info("No datetime columns detected for trend analysis.")
+    else:
+        st.info("No numeric columns found for statistical analysis.")
+
+with ds_tab2:
+    st.markdown("**Data Quality Report**")
+    quality = get_data_quality_report(df)
+    q1, q2, q3, q4 = st.columns(4)
+    with q1:
+        st.markdown(f"<div class='metric-tile'><div class='val'>{quality['total_rows']:,}</div><div class='lbl'>Total Rows</div></div>", unsafe_allow_html=True)
+    with q2:
+        st.markdown(f"<div class='metric-tile'><div class='val'>{quality['total_columns']}</div><div class='lbl'>Columns</div></div>", unsafe_allow_html=True)
+    with q3:
+        st.markdown(f"<div class='metric-tile'><div class='val'>{quality['duplicate_rows']:,}</div><div class='lbl'>Duplicates</div></div>", unsafe_allow_html=True)
+    with q4:
+        st.markdown(f"<div class='metric-tile'><div class='val'>{quality['duplicate_pct']}%</div><div class='lbl'>Duplicate %</div></div>", unsafe_allow_html=True)
+
+    if not quality['missing_df'].empty:
+        st.markdown("**Missing Values by Column**")
+        st.dataframe(quality['missing_df'], use_container_width=True)
+    else:
+        st.success("No missing values found!")
+
+with ds_tab3:
+    corr_fig = get_correlation_matrix(df)
+    if corr_fig:
+        st.plotly_chart(corr_fig, use_container_width=True)
+    else:
+        st.info("Need at least 2 numeric columns for correlation analysis.")
+
+with ds_tab4:
+    dist_fig = get_distribution_plots(df)
+    if dist_fig:
+        st.plotly_chart(dist_fig, use_container_width=True)
+    else:
+        st.info("No numeric columns found for distribution plots.")
 
 st.markdown("---")
 st.markdown("### 💬 Ask a Question")
