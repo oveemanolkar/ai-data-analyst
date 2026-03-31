@@ -26,11 +26,11 @@ DATABASE SCHEMA:
 {schema}
 
 RULES - follow these strictly:
-1. Output ONLY a single valid SQLite SELECT statement. No explanations, no markdown, no code blocks.
+1. Output ONLY a single valid DuckDB SELECT statement. No explanations, no markdown, no code blocks.
 2. Use only the table name: {table_name}
 3. Use only column names that exist in the schema above.
-4. Do NOT use features unsupported by SQLite (e.g., no FULL OUTER JOIN, no RIGHT JOIN).
-5. If the question involves time/dates, use SQLite date functions (strftime, date, etc.).
+4. DuckDB supports advanced SQL — you can use window functions, QUALIFY, DATE_TRUNC, STRFTIME, MEDIAN, STDDEV, and other analytical functions.
+5. If the question involves time/dates, use DuckDB date functions like DATE_TRUNC('month', column) or STRFTIME(column, '%Y-%m').
 6. Keep the query simple and correct. Do not guess column names.
 7. If you cannot answer with the given schema, output exactly: CANNOT_ANSWER
 

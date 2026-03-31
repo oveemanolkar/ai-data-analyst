@@ -7,7 +7,7 @@ import os
 import streamlit as st
 import pandas as pd
 
-from db import load_csv_to_sqlite, get_schema, run_query, sanitize_table_name
+from db import load_csv_to_duckdb, get_schema, run_query, sanitize_table_name, get_table_stats
 from llm import generate_sql, explain_results
 from utils import (
     detect_chart_type, build_chart, df_preview, is_valid_dataframe,
@@ -109,9 +109,13 @@ if uploaded_file:
     if st.session_state.get("_file_key") != file_key:
         with st.spinner("Loading dataset into database..."):
             try:
-                df = pd.read_csv(uploaded_file)
+                try:
+                    df = pd.read_csv(uploaded_file, encoding='utf-8')
+                except UnicodeDecodeError:
+                    uploaded_file.seek(0)
+                    df = pd.read_csv(uploaded_file, encoding='latin-1')
                 table_name = sanitize_table_name(uploaded_file.name.replace(".csv", ""))
-                conn = load_csv_to_sqlite(df, table_name)
+                conn = load_csv_to_duckdb(df, table_name)
                 schema = get_schema(conn, table_name)
                 st.session_state.df = df
                 st.session_state.conn = conn

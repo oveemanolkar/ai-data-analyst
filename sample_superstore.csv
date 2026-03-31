@@ -1,0 +1,31 @@
+Order ID,Order Date,Ship Date,Ship Mode,Customer ID,Customer Name,Segment,City,State,Region,Product ID,Category,Sub-Category,Product Name,Sales,Quantity,Discount,Profit
+CA-2022-152156,2022-11-08,2022-11-11,Second Class,CG-12520,Claire Gute,Consumer,Henderson,Kentucky,South,FUR-BO-10001798,Furniture,Bookcases,Bush Somerset Collection Bookcase,261.96,2,0.0,41.9136
+CA-2022-152156,2022-11-08,2022-11-11,Second Class,CG-12520,Claire Gute,Consumer,Henderson,Kentucky,South,FUR-CH-10000454,Furniture,Chairs,Hon Deluxe Fabric Upholstered Stacking Chairs,731.94,3,0.0,219.582
+CA-2022-138688,2022-06-12,2022-06-16,Second Class,DV-13045,Darrin Van Huff,Corporate,Los Angeles,California,West,OFF-LA-10000240,Office Supplies,Labels,Self-Adhesive Address Labels,14.62,2,0.0,6.8714
+US-2021-108966,2021-10-11,2021-10-18,Standard Class,SO-20335,Sean O'Donnell,Consumer,Fort Lauderdale,Florida,South,FUR-TA-10000577,Furniture,Tables,Bretford CR4500 Series Slim Rectangular Table,957.5775,5,0.45,-383.031
+US-2021-108966,2021-10-11,2021-10-18,Standard Class,SO-20335,Sean O'Donnell,Consumer,Fort Lauderdale,Florida,South,OFF-ST-10000760,Office Supplies,Storage,Eldon Fold 'N Roll Cart System,22.368,2,0.2,2.5164
+CA-2021-115812,2021-06-09,2021-06-14,Standard Class,BH-11710,Brosina Hoffman,Consumer,Los Angeles,California,West,FUR-FU-10001487,Furniture,Furnishings,Eldon Expressions Wood and Plastic Desk Accessories,48.86,7,0.0,14.1694
+CA-2021-115812,2021-06-09,2021-06-14,Standard Class,BH-11710,Brosina Hoffman,Consumer,Los Angeles,California,West,OFF-AR-10002833,Office Supplies,Art,Newell 322,7.28,4,0.0,1.9656
+CA-2021-115812,2021-06-09,2021-06-14,Standard Class,BH-11710,Brosina Hoffman,Consumer,Los Angeles,California,West,TEC-PH-10002275,Technology,Phones,Mitel 5320 IP Phone VoIP phone,907.152,6,0.2,90.7152
+CA-2021-115812,2021-06-09,2021-06-14,Standard Class,BH-11710,Brosina Hoffman,Consumer,Los Angeles,California,West,OFF-BI-10003910,Office Supplies,Binders,DXL Angle-View Binders,18.504,3,0.2,5.7825
+CA-2021-115812,2021-06-09,2021-06-14,Standard Class,BH-11710,Brosina Hoffman,Consumer,Los Angeles,California,West,OFF-AP-10002892,Office Supplies,Appliances,Belkin F5C206VTEL 6 Outlet,114.9,5,0.0,34.47
+CA-2022-138422,2022-01-27,2022-01-31,Standard Class,LH-16900,Lena Hernandez,Consumer,New York City,New York,East,OFF-ST-10000107,Office Supplies,Storage,Stur-D-Stor Shelving,907.152,1,0.2,90.7152
+CA-2022-138422,2022-01-27,2022-01-31,Standard Class,LH-16900,Lena Hernandez,Consumer,New York City,New York,East,OFF-AR-10001539,Office Supplies,Art,Boston 1645 Leaf Spring Scissors,1.248,3,0.2,0.5232
+CA-2023-117590,2023-09-17,2023-09-21,First Class,ES-14050,Elpida Sherwood,Consumer,Seattle,Washington,West,TEC-AC-10003027,Technology,Accessories,Plantronics CS510,2573.82,3,0.0,915.49
+CA-2023-117590,2023-09-17,2023-09-21,First Class,ES-14050,Elpida Sherwood,Consumer,Seattle,Washington,West,OFF-ST-10004186,Office Supplies,Storage,Fellowes Super Stor/Drawer,76.728,3,0.2,19.1808
+CA-2023-142140,2023-03-24,2023-03-28,Standard Class,TB-21520,Tracy Blankenship,Consumer,Philadelphia,Pennsylvania,East,FUR-CH-10001215,Furniture,Chairs,Global Deluxe Stacking Chair,403.16,2,0.0,140.49
+CA-2023-142140,2023-03-24,2023-03-28,Standard Class,TB-21520,Tracy Blankenship,Consumer,Philadelphia,Pennsylvania,East,OFF-LA-10003631,Office Supplies,Labels,Hon File Folder Labels,12.96,3,0.0,4.1515
+CA-2023-142140,2023-03-24,2023-03-28,Standard Class,TB-21520,Tracy Blankenship,Consumer,Philadelphia,Pennsylvania,East,OFF-PA-10001569,Office Supplies,Paper,Xerox 1887,15.552,3,0.2,5.4432
+US-2023-150630,2023-07-16,2023-07-21,Standard Class,PO-18865,Philisse Overcash,Consumer,Rochester,New York,East,TEC-PH-10004093,Technology,Phones,iPhone,911.424,4,0.2,68.3568
+US-2022-131492,2022-11-27,2022-12-01,Standard Class,MJ-17860,Maris Jurgens,Corporate,San Diego,California,West,OFF-PA-10002365,Office Supplies,Paper,Xerox 1918,16.448,2,0.2,5.5112
+US-2022-131492,2022-11-27,2022-12-01,Standard Class,MJ-17860,Maris Jurgens,Corporate,San Diego,California,West,FUR-BO-10002545,Furniture,Bookcases,Sauder Classic Bookcase,210.872,2,0.2,-19.864
+CA-2024-107727,2024-05-11,2024-05-15,Second Class,AA-10315,Andrew Allen,Consumer,Chicago,Illinois,Central,OFF-AR-10003056,Office Supplies,Art,Prismacolor Color Pencil Set,16.744,2,0.2,4.9816
+CA-2024-107727,2024-05-11,2024-05-15,Second Class,AA-10315,Andrew Allen,Consumer,Chicago,Illinois,Central,TEC-PH-10003197,Technology,Phones,Cisco SPA 501G IP Phone,718.12,2,0.0,215.436
+CA-2024-107727,2024-05-11,2024-05-15,Second Class,AA-10315,Andrew Allen,Consumer,Chicago,Illinois,Central,OFF-EN-10000927,Office Supplies,Envelopes,Poly String Tie Envelopes,29.6,4,0.0,13.32
+CA-2024-161389,2024-02-05,2024-02-07,First Class,IM-15070,Irene Maddox,Consumer,Seattle,Washington,West,FUR-TA-10002319,Furniture,Tables,Chromcraft Rectangular Conference Tables,1706.184,9,0.2,-85.1295
+CA-2024-161389,2024-02-05,2024-02-07,First Class,IM-15070,Irene Maddox,Consumer,Seattle,Washington,West,OFF-BI-10001359,Office Supplies,Binders,Avery Non-Stick Binders,3.54,2,0.0,1.7346
+US-2024-118983,2024-08-23,2024-08-28,Standard Class,HP-14815,Harold Pawlan,Home Office,Fort Worth,Texas,Central,OFF-AP-10001492,Office Supplies,Appliances,Hoover Replacement Belt,19.536,3,0.2,-3.7524
+US-2024-118983,2024-08-23,2024-08-28,Standard Class,HP-14815,Harold Pawlan,Home Office,Fort Worth,Texas,Central,OFF-BI-10003656,Office Supplies,Binders,Avery Durable Poly Binders,27.12,3,0.0,9.0252
+CA-2024-105893,2024-04-14,2024-04-18,Second Class,PK-19075,Pete Kriz,Consumer,Madison,Wisconsin,Central,OFF-ST-10001341,Office Supplies,Storage,Storex Durable Binder Clips,4.98,2,0.0,2.3904
+CA-2024-105893,2024-04-14,2024-04-18,Second Class,PK-19075,Pete Kriz,Consumer,Madison,Wisconsin,Central,TEC-AC-10000171,Technology,Accessories,Logitech Wireless Combo,66.96,2,0.0,20.088
+CA-2024-167164,2024-10-09,2024-10-13,Second Class,AG-10270,Adam Gayman,Consumer,Miami,Florida,South,OFF-EN-10001501,Office Supplies,Envelopes,Wausau Papers Astrobright Labels,80.64,6,0.2,29.0304
