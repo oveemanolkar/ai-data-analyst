@@ -8,16 +8,20 @@ import streamlit as st
 import pandas as pd
 
 from db import load_csv_to_duckdb, get_schema, run_query, sanitize_table_name, get_table_stats
-from analysis import (
-    get_statistical_summary, get_data_quality_report,
-    get_correlation_matrix, get_distribution_plots, detect_trends
-)
-from llm import generate_sql, explain_results
+from llm import generate_sql, explain_results, AVAILABLE_MODELS
+from memory import ConversationMemory
 from utils import (
     detect_chart_type, build_chart, df_preview, is_valid_dataframe,
     get_cached_result, cache_result, clear_cache
 )
+from analysis import (
+    get_statistical_summary, get_data_quality_report,
+    get_correlation_matrix, get_distribution_plots, detect_trends
+)
 
+# ---------------------------------------------------------------------------
+# Page config
+# ---------------------------------------------------------------------------
 st.set_page_config(
     page_title="AI Data Analyst",
     page_icon="🔍",
@@ -25,6 +29,9 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# ---------------------------------------------------------------------------
+# Custom CSS
+# ---------------------------------------------------------------------------
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -35,9 +42,11 @@ section[data-testid="stSidebar"] { background: #111827; border-right: 1px solid 
 .result-card { background: #1a1f2e; border: 1px solid #2d3748; border-radius: 12px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
 .sql-block { background: #0d1117; border: 1px solid #30363d; border-left: 3px solid #6366f1; border-radius: 8px; padding: 1rem 1.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #c9d1d9; white-space: pre-wrap; word-break: break-all; }
 .explanation-box { background: linear-gradient(135deg, #1a1f2e, #1e2333); border: 1px solid #3b4a6b; border-left: 3px solid #22d3ee; border-radius: 8px; padding: 1rem 1.25rem; color: #94a3b8; font-size: 0.95rem; line-height: 1.6; }
+.memory-box { background: #1a2a1a; border: 1px solid #2d4a2d; border-left: 3px solid #4ade80; border-radius: 8px; padding: 0.75rem 1rem; color: #86efac; font-size: 0.85rem; margin-bottom: 0.5rem; }
 .badge { display: inline-block; padding: 0.2rem 0.65rem; border-radius: 9999px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
 .badge-cached { background: #1a3a2a; color: #4ade80; border: 1px solid #166534; }
 .badge-live { background: #1e1a3a; color: #a78bfa; border: 1px solid #4c1d95; }
+.badge-memory { background: #1a2a3a; color: #38bdf8; border: 1px solid #0369a1; }
 .metric-tile { background: #1a1f2e; border: 1px solid #2d3748; border-radius: 10px; padding: 0.9rem 1.1rem; text-align: center; }
 .metric-tile .val { font-size: 1.6rem; font-weight: 700; color: #e2e8f0; }
 .metric-tile .lbl { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
@@ -46,6 +55,9 @@ h1, h2, h3 { color: #f1f5f9 !important; }
 """, unsafe_allow_html=True)
 
 
+# ---------------------------------------------------------------------------
+# Session state initialisation
+# ---------------------------------------------------------------------------
 def init_state():
     defaults = {
         "conn": None,
@@ -54,6 +66,9 @@ def init_state():
         "schema": None,
         "history": [],
         "api_key": os.getenv("GROQ_API_KEY", ""),
+        "selected_model": "Llama 3.3 70B (Best Quality)",
+        "memory": ConversationMemory(max_turns=10),
+        "uploaded_files_info": {},  # {table_name: filename}
     }
     for k, v in defaults.items():
         if k not in st.session_state:
@@ -61,9 +76,14 @@ def init_state():
 
 init_state()
 
+# ---------------------------------------------------------------------------
+# Sidebar
+# ---------------------------------------------------------------------------
 with st.sidebar:
     st.markdown("## 🔍 AI Data Analyst")
     st.markdown("---")
+
+    # API Key
     st.markdown("### Groq API Key")
     st.markdown(
         "<small style='color:#4b5563;'>Free at <a href='https://console.groq.com' target='_blank' style='color:#6366f1;'>console.groq.com</a></small>",
@@ -74,82 +94,149 @@ with st.sidebar:
         type="password",
         value=st.session_state.api_key,
         placeholder="gsk_...",
-        help="Your key is stored only in this browser session.",
     )
     if api_key_input:
         st.session_state.api_key = api_key_input
 
     st.markdown("---")
-    st.markdown("### Upload Dataset")
-    uploaded_file = st.file_uploader(
-        "CSV file", type=["csv"],
-        help="Upload any CSV file. It will be loaded into an in-memory SQLite database."
+
+    # Model switcher
+    st.markdown("### 🤖 Model Selection")
+    selected_model = st.selectbox(
+        "Choose LLM model",
+        options=list(AVAILABLE_MODELS.keys()),
+        index=0,
+        help="Llama 3.3 70B gives best results. Llama 3.1 8B is fastest."
+    )
+    st.session_state.selected_model = selected_model
+
+    st.markdown("---")
+
+    # Multi-file upload
+    st.markdown("### 📁 Upload Datasets")
+    st.markdown("<small style='color:#4b5563;'>Upload one or more CSV files</small>", unsafe_allow_html=True)
+    uploaded_files = st.file_uploader(
+        "CSV files",
+        type=["csv"],
+        accept_multiple_files=True,
+        help="Upload one or more CSV files. Each becomes a separate table you can query."
     )
 
     st.markdown("---")
-    st.markdown("### Chart Options")
+
+    # Chart options
+    st.markdown("### 📊 Chart Options")
     chart_override = st.selectbox(
-        "Chart type (auto = smart detection)",
+        "Chart type",
         options=["auto", "bar", "line", "scatter", "none"],
         index=0,
     )
 
     st.markdown("---")
-    if st.button("Clear query cache"):
+
+    # Memory controls
+    st.markdown("### 🧠 Conversation Memory")
+    memory_size = len(st.session_state.memory)
+    st.markdown(f"<small style='color:#4b5563;'>{memory_size}/10 turns stored</small>", unsafe_allow_html=True)
+    if st.button("🗑️ Clear memory"):
+        st.session_state.memory.clear()
+        st.success("Memory cleared!")
+
+    if st.button("🗑️ Clear query cache"):
         clear_cache()
         st.success("Cache cleared!")
-    if st.session_state.history and st.button("Clear history"):
+
+    if st.session_state.history and st.button("🗑️ Clear history"):
         st.session_state.history = []
         st.rerun()
 
     st.markdown("---")
     st.markdown(
-        "<small style='color:#4b5563;'>Built with Streamlit · Llama 3 (Groq) · SQLite</small>",
+        "<small style='color:#4b5563;'>Built with Streamlit · Llama 3 (Groq) · DuckDB</small>",
         unsafe_allow_html=True
     )
 
-if uploaded_file:
-    file_key = f"{uploaded_file.name}_{uploaded_file.size}"
-    if st.session_state.get("_file_key") != file_key:
-        with st.spinner("Loading dataset into database..."):
-            try:
+# ---------------------------------------------------------------------------
+# Process uploaded files (multi-file support)
+# ---------------------------------------------------------------------------
+if uploaded_files:
+    for uploaded_file in uploaded_files:
+        file_key = f"{uploaded_file.name}_{uploaded_file.size}"
+        if file_key not in st.session_state.uploaded_files_info:
+            with st.spinner(f"Loading {uploaded_file.name}..."):
                 try:
-                    df = pd.read_csv(uploaded_file, encoding='utf-8')
-                except UnicodeDecodeError:
-                    uploaded_file.seek(0)
-                    df = pd.read_csv(uploaded_file, encoding='latin-1')
-                table_name = sanitize_table_name(uploaded_file.name.replace(".csv", ""))
-                conn = load_csv_to_duckdb(df, table_name)
-                schema = get_schema(conn, table_name)
-                st.session_state.df = df
-                st.session_state.conn = conn
-                st.session_state.table_name = table_name
-                st.session_state.schema = schema
-                st.session_state.history = []
-                st.session_state._file_key = file_key
-                clear_cache()
-                st.toast(f"Loaded {uploaded_file.name} — {len(df):,} rows x {len(df.columns)} columns")
-            except Exception as e:
-                st.error(f"Failed to load file: {e}")
+                    try:
+                        df = pd.read_csv(uploaded_file, encoding='utf-8')
+                    except UnicodeDecodeError:
+                        uploaded_file.seek(0)
+                        df = pd.read_csv(uploaded_file, encoding='latin-1')
 
+                    table_name = sanitize_table_name(uploaded_file.name.replace(".csv", ""))
+
+                    # If first file, set as primary
+                    if st.session_state.conn is None:
+                        conn = load_csv_to_duckdb(df, table_name)
+                        st.session_state.conn = conn
+                        st.session_state.df = df
+                        st.session_state.table_name = table_name
+                    else:
+                        # Add additional tables to existing connection
+                        st.session_state.conn.execute(
+                            f"CREATE TABLE IF NOT EXISTS {table_name} AS SELECT * FROM df"
+                        )
+
+                    # Update schema to include all tables
+                    all_schemas = []
+                    for tname in list(st.session_state.uploaded_files_info.values()) + [table_name]:
+                        schema_part = get_schema(st.session_state.conn, tname)
+                        if schema_part:
+                            all_schemas.append(schema_part)
+                    schema_part = get_schema(st.session_state.conn, table_name)
+                    if schema_part not in all_schemas:
+                        all_schemas.append(schema_part)
+                    st.session_state.schema = "\n\n".join(all_schemas)
+
+                    st.session_state.uploaded_files_info[file_key] = table_name
+                    clear_cache()
+                    st.toast(f"Loaded {uploaded_file.name} — {len(df):,} rows x {len(df.columns)} columns")
+
+                except Exception as e:
+                    st.error(f"Failed to load {uploaded_file.name}: {e}")
+
+# ---------------------------------------------------------------------------
+# Main content
+# ---------------------------------------------------------------------------
 st.markdown("# 🔍 AI Data Analyst")
-st.markdown("<p style='color:#64748b; margin-top:-0.5rem;'>Upload a CSV, ask questions in plain English, get SQL + insights instantly. Powered by Llama 3 on Groq — 100% free.</p>", unsafe_allow_html=True)
+st.markdown("<p style='color:#64748b; margin-top:-0.5rem;'>Upload CSVs, ask questions in plain English, get SQL + insights. Powered by Llama 3 on Groq — 100% free.</p>", unsafe_allow_html=True)
 
 if st.session_state.df is None:
     st.markdown("---")
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.markdown("<div class='result-card'><h3>📤 Upload</h3><p style='color:#64748b;'>Drop any CSV in the sidebar to get started.</p></div>", unsafe_allow_html=True)
+        st.markdown("<div class='result-card'><h3>📤 Upload</h3><p style='color:#64748b;'>Drop one or more CSVs in the sidebar.</p></div>", unsafe_allow_html=True)
     with col2:
-        st.markdown("<div class='result-card'><h3>💬 Ask</h3><p style='color:#64748b;'>Type a question in plain English — no SQL needed.</p></div>", unsafe_allow_html=True)
+        st.markdown("<div class='result-card'><h3>💬 Ask</h3><p style='color:#64748b;'>Ask follow-up questions with conversation memory.</p></div>", unsafe_allow_html=True)
     with col3:
-        st.markdown("<div class='result-card'><h3>📊 Explore</h3><p style='color:#64748b;'>Get SQL queries, result tables, charts, and AI explanations.</p></div>", unsafe_allow_html=True)
+        st.markdown("<div class='result-card'><h3>📊 Explore</h3><p style='color:#64748b;'>Get SQL, charts, stats, and AI explanations.</p></div>", unsafe_allow_html=True)
     st.info("Upload a CSV file from the sidebar to begin.")
     st.stop()
 
 df = st.session_state.df
 
-with st.expander("📋 Dataset Overview", expanded=True):
+# ---------------------------------------------------------------------------
+# Loaded datasets info
+# ---------------------------------------------------------------------------
+if st.session_state.uploaded_files_info:
+    st.markdown("### 📁 Loaded Datasets")
+    cols = st.columns(len(st.session_state.uploaded_files_info))
+    for i, (fkey, tname) in enumerate(st.session_state.uploaded_files_info.items()):
+        with cols[i]:
+            st.markdown(f"<div class='result-card'><b>{tname}</b><br><small style='color:#64748b;'>Table ready to query</small></div>", unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------------
+# Dataset overview
+# ---------------------------------------------------------------------------
+with st.expander("📋 Dataset Overview", expanded=False):
     m1, m2, m3, m4 = st.columns(4)
     with m1:
         st.markdown(f"<div class='metric-tile'><div class='val'>{len(df):,}</div><div class='lbl'>Rows</div></div>", unsafe_allow_html=True)
@@ -202,7 +289,6 @@ with ds_tab2:
         st.markdown(f"<div class='metric-tile'><div class='val'>{quality['duplicate_rows']:,}</div><div class='lbl'>Duplicates</div></div>", unsafe_allow_html=True)
     with q4:
         st.markdown(f"<div class='metric-tile'><div class='val'>{quality['duplicate_pct']}%</div><div class='lbl'>Duplicate %</div></div>", unsafe_allow_html=True)
-
     if not quality['missing_df'].empty:
         st.markdown("**Missing Values by Column**")
         st.dataframe(quality['missing_df'], use_container_width=True)
@@ -223,21 +309,38 @@ with ds_tab4:
     else:
         st.info("No numeric columns found for distribution plots.")
 
+# ---------------------------------------------------------------------------
+# Conversation memory display
+# ---------------------------------------------------------------------------
+st.markdown("---")
+st.markdown("### 🧠 Conversation Memory")
+
+if not st.session_state.memory.is_empty():
+    st.markdown(f"<small style='color:#4b5563;'>Remembering last {len(st.session_state.memory)} question(s) — ask follow-up questions naturally!</small>", unsafe_allow_html=True)
+    with st.expander("View conversation history", expanded=False):
+        for i, turn in enumerate(st.session_state.memory.history, 1):
+            st.markdown(f"<div class='memory-box'><b>Q{i}:</b> {turn['question']}<br><b>SQL:</b> {turn['sql']}</div>", unsafe_allow_html=True)
+else:
+    st.markdown("<small style='color:#4b5563;'>No conversation history yet. Ask your first question below!</small>", unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------------
+# Query input
+# ---------------------------------------------------------------------------
 st.markdown("---")
 st.markdown("### 💬 Ask a Question")
 
 example_questions = [
-    "Show total sales by region",
-    "What are the top 5 products by revenue?",
-    "Show monthly sales trend",
-    "Which category has the highest average order value?",
+    "What are the top 10 countries by total revenue?",
+    "Show monthly revenue trend",
+    "Which products have the highest average unit price?",
+    "How many unique customers per country?",
     "Count records per year",
 ]
 
 with st.form("query_form", clear_on_submit=False):
     question = st.text_input(
         "Your question",
-        placeholder="e.g. Which region has the highest sales?",
+        placeholder="e.g. Which country has the highest sales? Or ask a follow-up...",
         label_visibility="collapsed",
     )
     submitted = st.form_submit_button("🔍 Analyze", use_container_width=False)
@@ -250,14 +353,20 @@ for i, eq in enumerate(example_questions):
             question = eq
             submitted = True
 
+# ---------------------------------------------------------------------------
+# Process query
+# ---------------------------------------------------------------------------
 if submitted and question:
     if not st.session_state.api_key:
-        st.error("Please enter your Groq API key in the sidebar. Get one free at https://console.groq.com")
+        st.error("Please enter your Groq API key in the sidebar.")
         st.stop()
 
     schema = st.session_state.schema
     table_name = st.session_state.table_name
     conn = st.session_state.conn
+
+    # Get conversation context from memory
+    context = st.session_state.memory.get_context()
 
     cached = get_cached_result(question, schema)
 
@@ -267,14 +376,14 @@ if submitted and question:
     else:
         was_cached = False
 
-        with st.spinner("Generating SQL query..."):
-            sql, err = generate_sql(question, schema, table_name)
+        with st.spinner("🤖 Generating SQL query..."):
+            sql, err = generate_sql(question, schema, table_name, context)
 
         if err:
             st.error(f"SQL Generation Failed: {err}")
             st.stop()
 
-        with st.spinner("Running query..."):
+        with st.spinner("⚡ Running query..."):
             result_df, run_err = run_query(conn, sql)
 
         if run_err:
@@ -286,8 +395,12 @@ if submitted and question:
         if is_valid_dataframe(result_df):
             cache_result(question, schema, sql, result_df)
 
-    with st.spinner("Generating explanation..."):
+    with st.spinner("✍️ Generating explanation..."):
         explanation, _ = explain_results(question, sql, result_df)
+
+    # Add to conversation memory
+    result_summary = result_df.head(5).to_string(index=False) if is_valid_dataframe(result_df) else "No results"
+    st.session_state.memory.add(question, sql, result_summary)
 
     if chart_override == "auto":
         chart_type = detect_chart_type(result_df) if is_valid_dataframe(result_df) else "none"
@@ -304,8 +417,12 @@ if submitted and question:
         "cached": was_cached,
         "chart_type": chart_type,
         "fig": fig,
+        "model": st.session_state.selected_model,
     })
 
+# ---------------------------------------------------------------------------
+# Results history
+# ---------------------------------------------------------------------------
 if st.session_state.history:
     st.markdown("---")
     st.markdown("### 📊 Results")
@@ -316,15 +433,16 @@ if st.session_state.history:
             if entry["cached"]
             else "<span class='badge badge-live'>live</span>"
         )
+        model_badge = f"<span class='badge badge-memory'>{entry.get('model', '')}</span>"
 
-        with st.expander(f"{entry['question']} {badge}", expanded=(idx == 0)):
+        with st.expander(f"{entry['question']} {badge} {model_badge}", expanded=(idx == 0)):
             tab1, tab2, tab3 = st.tabs(["📊 Chart & Results", "🔧 SQL Query", "💡 Explanation"])
 
             with tab1:
                 if entry["fig"]:
                     st.plotly_chart(entry["fig"], use_container_width=True)
                 elif entry["chart_type"] == "none":
-                    st.info("No chart generated — result does not lend itself to visualization.")
+                    st.info("No chart generated.")
 
                 result_df = entry["result_df"]
                 if is_valid_dataframe(result_df):
