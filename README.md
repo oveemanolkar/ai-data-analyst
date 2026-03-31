@@ -1,3 +1,5 @@
+🚀 **Live Demo:** [https://ai-data-analyst-1.streamlit.app](https://ai-data-analyst-1.streamlit.app)
+
 # 🔍 AI Data Analyst — Chat with Your Data
 
 A powerful local web application that lets you upload any CSV file and ask questions in plain English. Powered by **Llama 3 on Groq** (free) — no OpenAI API key needed.
