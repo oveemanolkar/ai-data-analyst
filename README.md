@@ -26,6 +26,11 @@ A powerful local web application that lets you upload any CSV file and ask quest
 - **Distribution Plots** — histograms for all numeric columns
 - **Trend Detection** — automatically detects if metrics are trending up, down, or stable
 
+### AI Engineering
+- **Conversation Memory** — remembers last 10 questions for context-aware follow-ups
+- **Multi-CSV Support** — upload multiple datasets and query across all of them
+- **Model Switcher** — switch between Groq models (Llama 3.3 70B, Llama 3.1 8B, Mixtral 8x7B)
+
 ## 🛠️ Tech Stack
 
 | Layer | Technology |
@@ -41,9 +46,10 @@ A powerful local web application that lets you upload any CSV file and ask quest
 ```
 ai_data_analyst/
 ├── app.py            # Main Streamlit UI
-├── llm.py            # LLM interaction — SQL generation + explanations
+├── llm.py            # LLM interaction — SQL generation, explanations, model switcher
 ├── db.py             # DuckDB layer — CSV ingestion, schema, query execution
 ├── analysis.py       # Data Science — stats, quality, correlations, trends
+├── memory.py         # Conversation memory — context-aware follow-up questions
 ├── utils.py          # Helpers — chart detection, caching, DataFrame utilities
 ├── requirements.txt  # Dependencies
 ├── .env.example      # Environment variable template
@@ -89,16 +95,24 @@ Open your browser at **http://localhost:8501**
 
 - *"What are the top 10 countries by total revenue?"*
 - *"Show monthly revenue trend"*
+- *"Now filter that by European countries only"* (follow-up with memory)
 - *"Which products have the highest average unit price?"*
-- *"What is the total quantity sold per country?"*
-- *"Show me sales by month for 2011"*
+- *"How many unique customers per country?"*
 
 ## 📊 Example Dataset
 
-This project was tested with the [E-Commerce Data](https://www.kaggle.com/datasets/carrie1/ecommerce-data) dataset from Kaggle — 541,909 rows of real UK retail transactions.
+Tested with the [E-Commerce Data](https://www.kaggle.com/datasets/carrie1/ecommerce-data) dataset from Kaggle — 541,909 rows of real UK retail transactions.
+
+## 🤖 Available Models
+
+| Model | Best For |
+|---|---|
+| Llama 3.3 70B | Best SQL quality, complex questions |
+| Llama 3.1 8B | Fastest responses, simple queries |
+| Mixtral 8x7B | Balanced speed and quality |
 
 ## 🔒 Security
 
 - Only SELECT queries are allowed — no INSERT/UPDATE/DELETE/DROP
-- API key is stored locally in `.env` — never committed to GitHub
-- Data is processed entirely in memory — nothing persisted after session ends
+- API key stored locally in `.env` — never committed to GitHub
+- Data processed entirely in memory — nothing persisted after session ends
